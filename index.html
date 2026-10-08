@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay Control</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen" class="screen">
+  <div class="card login-card">
+    <img id="loginLogo" class="logo" src="" alt="logo" style="display:none">
+    <h2 id="loginCompanyName">Relay Control</h2>
+    <input type="text" id="loginUser" placeholder="Username" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+    <button class="btn primary" onclick="doLogin()">Login</button>
+    <p class="link" onclick="showForgot()">Forgot password?</p>
+    <p id="loginError" class="error"></p>
+  </div>
+</div>
+
+<!-- ============ FORGOT PASSWORD (OTP) ============ -->
+<div id="forgotScreen" class="screen" style="display:none">
+  <div class="card login-card">
+    <h2>Reset Password</h2>
+    <div id="forgotStep1">
+      <input type="text" id="forgotUser" placeholder="Username">
+      <input type="email" id="forgotEmail" placeholder="Registered Email">
+      <button class="btn primary" onclick="requestOtp()">Send OTP</button>
+    </div>
+    <div id="forgotStep2" style="display:none">
+      <input type="text" id="otpCode" placeholder="Enter 6-digit OTP">
+      <input type="password" id="newPass" placeholder="New Password">
+      <button class="btn primary" onclick="verifyOtp()">Reset Password</button>
+    </div>
+    <p id="forgotMsg" class="error"></p>
+    <p class="link" onclick="showLogin()">Back to login</p>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="dashScreen" class="screen" style="display:none">
+  <header class="topbar">
+    <img id="topLogo" class="logo-small" src="" style="display:none">
+    <h1 id="topCompanyName">Relay Control</h1>
+    <div class="top-right">
+      <span id="clock12h">--:--:-- --</span>
+      <button class="btn small" onclick="openSettings()">⚙ Settings</button>
+      <button class="btn small danger" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="card status-card">
+      <p class="muted">Current Status</p>
+      <div id="statusText" class="status-text off">OFF</div>
+
+      <!-- Round push button -->
+      <div class="push-btn-wrap">
+        <button id="pushBtn" class="push-btn off" onclick="togglePush()">
+          <span class="push-label" id="pushLabel">OFF</span>
+        </button>
+      </div>
+
+      <div class="mode-toggle">
+        <label><input type="radio" name="mode" value="manual" onchange="setMode('manual')"> Manual</label>
+        <label><input type="radio" name="mode" value="schedule" onchange="setMode('schedule')"> Timer / Schedule</label>
+      </div>
+    </div>
+
+    <!-- Schedule panel - only visible when mode = schedule -->
+    <div id="schedulePanel" class="card" style="display:none">
+      <h3>Weekly Schedule</h3>
+      <div id="scheduleList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div id="settingsModal" class="modal" style="display:none">
+  <div class="card modal-card">
+    <h2>Settings</h2>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('tabGeneral')">General</button>
+      <button class="tab-btn" onclick="showTab('tabWifi')">WiFi</button>
+      <button class="tab-btn" onclick="showTab('tabMqtt')">MQTT</button>
+      <button class="tab-btn" onclick="showTab('tabNotify')">Notify</button>
+      <button class="tab-btn" onclick="showTab('tabUsers')">Users</button>
+    </div>
+
+    <div id="tabGeneral" class="tab-content">
+      <label>Company Name</label>
+      <input type="text" id="setCompanyName">
+      <label>Company Logo</label>
+      <input type="file" id="setLogoFile" accept="image/*">
+      <button class="btn primary" onclick="saveCompany()">Save</button>
+    </div>
+
+    <div id="tabWifi" class="tab-content" style="display:none">
+      <label>WiFi SSID</label>
+      <input type="text" id="setSsid">
+      <label>WiFi Password</label>
+      <input type="password" id="setWifiPass">
+      <button class="btn primary" onclick="saveWifi()">Save & Reboot</button>
+    </div>
+
+    <div id="tabMqtt" class="tab-content" style="display:none">
+      <label><input type="checkbox" id="mqttEnabled"> Enable MQTT</label>
+      <label>Broker Address</label>
+      <input type="text" id="mqttServer" placeholder="broker.example.com">
+      <label>Port</label>
+      <input type="number" id="mqttPort" value="1883">
+      <label>Username</label>
+      <input type="text" id="mqttUser">
+      <label>Password</label>
+      <input type="password" id="mqttPass">
+      <label>Command Topic</label>
+      <input type="text" id="mqttTopicCmd" placeholder="relay/cmd">
+      <label>State Topic</label>
+      <input type="text" id="mqttTopicState" placeholder="relay/state">
+      <button class="btn primary" onclick="saveMqtt()">Save</button>
+    </div>
+
+    <div id="tabNotify" class="tab-content" style="display:none">
+      <label><input type="checkbox" id="notifyEnabled"> Enable Email Notifications</label>
+      <label>Notify Email</label>
+      <input type="email" id="notifyEmail">
+      <label>SMTP Host</label>
+      <input type="text" id="smtpHost" placeholder="smtp.gmail.com">
+      <label>SMTP Port</label>
+      <input type="number" id="smtpPort" value="587">
+      <label>SMTP Username</label>
+      <input type="text" id="smtpUser">
+      <label>SMTP Password / App Password</label>
+      <input type="password" id="smtpPass">
+      <button class="btn primary" onclick="saveNotify()">Save</button>
+    </div>
+
+    <div id="tabUsers" class="tab-content" style="display:none">
+      <label>New Username</label>
+      <input type="text" id="newUsername">
+      <label>New Password</label>
+      <input type="password" id="newUserPass">
+      <button class="btn primary" onclick="addUser()">Add User</button>
+      <p id="userMsg" class="error"></p>
+    </div>
+
+    <button class="btn" onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+<script src="/script.js"></script>
+</body>
+</html>
